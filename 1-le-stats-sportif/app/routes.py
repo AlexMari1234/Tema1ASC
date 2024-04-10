@@ -4,16 +4,14 @@ from flask import request, jsonify
 import os
 import json
 
-jobs_status = {}
-
 
 @webserver.route('/api/jobs', methods=['GET'])
 def get_status_jobs():
     status_jobs = {}
     status_jobs["status"] = "done"
     status_jobs["data"] = []
-    for job_id in jobs_status:
-        status_jobs["data"].append({job_id: jobs_status[job_id]})
+    for job_id in webserver.jobs_status:
+        status_jobs["data"].append({job_id: webserver.jobs_status[job_id]})
     
     return jsonify(status_jobs)
 
@@ -42,7 +40,6 @@ def post_endpoint():
 
 @webserver.route('/api/get_results/<job_id>', methods=['GET'])
 def get_response(job_id):
-    print(f"JobID is {job_id}")
     # TODO
     # Check if job_id is valid
 
@@ -53,11 +50,11 @@ def get_response(job_id):
     #        'data': res
     #    })
 
-    if job_id not in jobs_status:
+    if job_id not in webserver.jobs_status:
         return jsonify({"status": "eror", "reason": "Invalid job_id"}), 404
 
     # Verifică starea job-ului
-    if jobs_status[job_id] == 'done':
+    if webserver.jobs_status[job_id] == 'done':
         # Încarcă și returnează rezultatul din fișierul corespunzător job_id
         with open(f"results/{job_id}.json", "r") as f:
             result = json.load(f)
@@ -68,9 +65,6 @@ def get_response(job_id):
 
 @webserver.route('/api/states_mean', methods=['POST'])
 def states_mean_request():
-    # Get request data
-    data = request.json
-    print(f"Got request {data}")
 
     # TODO
     # Register job. Don't wait for task to finish
@@ -81,11 +75,12 @@ def states_mean_request():
     data = request.json
     question = data["question"]
 
-    job_id = f"job_id_{webserver.job_counter}"
-    webserver.job_counter += 1
+    with webserver.lock:
+        job_id = f"job_id_{webserver.job_counter}"
+        webserver.job_counter += 1
 
-    webserver.tasks_runner.add_task(calculate_states_mean, data, question, job_id, webserver.data_ingestor.dict)
-    jobs_status[job_id] = 'running'
+    webserver.tasks_runner.add_task(webserver.endpoints_requests.calculate_states_mean, data, question, job_id, webserver.data_ingestor.dict, webserver.jobs_status)
+    webserver.jobs_status[job_id] = 'running'
     
     return jsonify({"job_id": job_id}), 200
 
@@ -111,7 +106,7 @@ def calculate_states_mean(data, question, job_id, webserver_data_ingestor_dict):
     with open(file_path, 'w') as f:
         json.dump(results, f)
     
-    jobs_status[job_id] = 'done'
+    webserver.jobs_status[job_id] = 'done'
 
 
 @webserver.route('/api/state_mean', methods=['POST'])
@@ -127,13 +122,14 @@ def state_mean_request():
     state = data["state"]
 
     # Generează un nou job_id
-    job_id = f"job_id_{webserver.job_counter}"
-    webserver.job_counter += 1
+    with webserver.lock:
+        job_id = f"job_id_{webserver.job_counter}"
+        webserver.job_counter += 1
 
     # Adaugă job-ul în ThreadPool pentru a fi executat asincron
-    webserver.tasks_runner.add_task(calculate_state_mean, data, question, state, job_id, webserver.data_ingestor.dict)
+    webserver.tasks_runner.add_task(webserver.endpoints_requests.calculate_state_mean, data, question, state, job_id, webserver.data_ingestor.dict, webserver.jobs_status)
     
-    jobs_status[job_id] = 'running'
+    webserver.jobs_status[job_id] = 'running'
     # Returnează job_id pentru a verifica starea mai târziu
     return jsonify({"job_id": job_id}), 200
 
@@ -159,7 +155,7 @@ def calculate_state_mean(data, question, state, job_id, data_ingestor_dict):
         json.dump(result, f)
     
     # Actualizează starea job-ului
-    jobs_status[job_id] = 'done'
+    webserver.jobs_status[job_id] = 'done'
 
 
 @webserver.route('/api/best5', methods=['POST'])
@@ -173,11 +169,12 @@ def best5_request():
     data = request.json
     question = data["question"]
 
-    job_id = f"job_id_{webserver.job_counter}"
-    webserver.job_counter += 1
+    with webserver.lock:
+        job_id = f"job_id_{webserver.job_counter}"
+        webserver.job_counter += 1
 
-    webserver.tasks_runner.add_task(calculate_best5, data, question, job_id, webserver.data_ingestor.dict)
-    jobs_status[job_id] = 'running'
+    webserver.tasks_runner.add_task(webserver.endpoints_requests.calculate_best5, data, question, job_id, webserver.data_ingestor.dict, webserver.jobs_status, webserver.data_ingestor.questions_best_is_min)
+    webserver.jobs_status[job_id] = 'running'
 
     return jsonify({"job_id": job_id}), 200
 
@@ -207,7 +204,7 @@ def calculate_best5(data, question, job_id, webserver_data_ingestor_dict):
     with open(file_path, 'w') as f:
         json.dump(results, f)
     
-    jobs_status[job_id] = 'done'
+    webserver.jobs_status[job_id] = 'done'
 
 @webserver.route('/api/worst5', methods=['POST'])
 def worst5_request():
@@ -221,11 +218,12 @@ def worst5_request():
     data = request.json
     question = data["question"]
 
-    job_id = f"job_id_{webserver.job_counter}"
-    webserver.job_counter += 1
+    with webserver.lock:
+        job_id = f"job_id_{webserver.job_counter}"
+        webserver.job_counter += 1
 
-    webserver.tasks_runner.add_task(calculate_worst5, data, question, job_id, webserver.data_ingestor.dict)
-    jobs_status[job_id] = 'running'
+    webserver.tasks_runner.add_task(webserver.endpoints_requests.calculate_worst5, data, question, job_id, webserver.data_ingestor.dict, webserver.jobs_status, webserver.data_ingestor.questions_best_is_min)
+    webserver.jobs_status[job_id] = 'running'
 
     return jsonify({"job_id": job_id}), 200
 
@@ -255,7 +253,7 @@ def calculate_worst5(data, question, job_id, data_ingestor_dict):
     with open(file_path, 'w') as f:
         json.dump(results, f)
     
-    jobs_status[job_id] = 'done'
+    webserver.jobs_status[job_id] = 'done'
 
 @webserver.route('/api/global_mean', methods=['POST'])
 def global_mean_request():
@@ -269,11 +267,12 @@ def global_mean_request():
     data = request.json
     question = data["question"]
 
-    job_id = f"job_id_{webserver.job_counter}"
-    webserver.job_counter += 1
+    with webserver.lock:
+        job_id = f"job_id_{webserver.job_counter}"
+        webserver.job_counter += 1
 
-    webserver.tasks_runner.add_task(calculate_global_mean, data, question, job_id, webserver.data_ingestor.dict)
-    jobs_status[job_id] = 'running'
+    webserver.tasks_runner.add_task(webserver.endpoints_requests.calculate_global_mean, data, question, job_id, webserver.data_ingestor.dict, webserver.jobs_status)
+    webserver.jobs_status[job_id] = 'running'
 
     return jsonify({"job_id": job_id}), 200
 
@@ -297,7 +296,7 @@ def calculate_global_mean(data, question, job_id, data_ingestor_dict):
     with open(file_path, 'w') as f:
         json.dump(result, f)
     
-    jobs_status[job_id] = 'done'
+    webserver.jobs_status[job_id] = 'done'
 
 @webserver.route('/api/diff_from_mean', methods=['POST'])
 def diff_from_mean_request():
@@ -311,11 +310,12 @@ def diff_from_mean_request():
     data = request.json
     question = data["question"]
 
-    job_id = f"job_id_{webserver.job_counter}"
-    webserver.job_counter += 1
+    with webserver.lock:
+        job_id = f"job_id_{webserver.job_counter}"
+        webserver.job_counter += 1
 
-    webserver.tasks_runner.add_task(calculate_diff_from_mean, data, question, job_id, webserver.data_ingestor.dict)
-    jobs_status[job_id] = 'running'
+    webserver.tasks_runner.add_task(webserver.endpoints_requests.calculate_diff_from_mean, data, question, job_id, webserver.data_ingestor.dict, webserver.jobs_status)
+    webserver.jobs_status[job_id] = 'running'
 
     return jsonify({"job_id": job_id}), 200
 
@@ -351,7 +351,7 @@ def calculate_diff_from_mean(data, question, job_id, data_ingestor_dict):
     with open(file_path, 'w') as f:
         json.dump(results, f)
     
-    jobs_status[job_id] = 'done'    
+    webserver.jobs_status[job_id] = 'done'    
 
 @webserver.route('/api/state_diff_from_mean', methods=['POST'])
 def state_diff_from_mean_request():
@@ -366,11 +366,12 @@ def state_diff_from_mean_request():
     question = data["question"]
     state = data["state"]
 
-    job_id = f"job_id_{webserver.job_counter}"
-    webserver.job_counter += 1
+    with webserver.lock:
+        job_id = f"job_id_{webserver.job_counter}"
+        webserver.job_counter += 1
 
-    webserver.tasks_runner.add_task(calculate_state_diff_from_mean, data, question, state, job_id, webserver.data_ingestor.dict)
-    jobs_status[job_id] = 'running'
+    webserver.tasks_runner.add_task(webserver.endpoints_requests.calculate_state_diff_from_mean, data, question, state, job_id, webserver.data_ingestor.dict, webserver.jobs_status)
+    webserver.jobs_status[job_id] = 'running'
 
     return jsonify({"job_id": job_id}), 200
 
@@ -401,7 +402,7 @@ def calculate_state_diff_from_mean(data, question, state, job_id, data_ingestor_
     with open(file_path, 'w') as f:
         json.dump(result, f)
     
-    jobs_status[job_id] = 'done'
+    webserver.jobs_status[job_id] = 'done'
 
 @webserver.route('/api/mean_by_category', methods=['POST'])
 def mean_by_category_request():
@@ -414,11 +415,12 @@ def mean_by_category_request():
     data = request.json
     question = data["question"]
 
-    job_id = f"job_id_{webserver.job_counter}"
-    webserver.job_counter += 1
+    with webserver.lock:
+        job_id = f"job_id_{webserver.job_counter}"
+        webserver.job_counter += 1
 
-    webserver.tasks_runner.add_task(calculate_mean_by_category, data, question, job_id, webserver.data_ingestor.dict)
-    jobs_status[job_id] = 'running'
+    webserver.tasks_runner.add_task(webserver.endpoints_requests.calculate_mean_by_category, data, question, job_id, webserver.data_ingestor.dict, webserver.jobs_status)
+    webserver.jobs_status[job_id] = 'running'
 
     return jsonify({"job_id": job_id}), 200
 
@@ -457,7 +459,7 @@ def calculate_mean_by_category(data, question, job_id, data_ingestor_dict):
         formatted_results = {str(key): value for key, value in results.items()}
         json.dump(formatted_results, f)
     
-    jobs_status[job_id] = 'done'
+    webserver.jobs_status[job_id] = 'done'
 
 @webserver.route('/api/state_mean_by_category', methods=['POST'])
 def state_mean_by_category_request():
@@ -471,11 +473,12 @@ def state_mean_by_category_request():
     question = data["question"]
     state = data["state"]
 
-    job_id = f"job_id_{webserver.job_counter}"
-    webserver.job_counter += 1
+    with webserver.lock:
+        job_id = f"job_id_{webserver.job_counter}"
+        webserver.job_counter += 1
 
-    webserver.tasks_runner.add_task(calculate_state_mean_by_category, data, question, state, job_id, webserver.data_ingestor.dict)
-    jobs_status[job_id] = 'running'
+    webserver.tasks_runner.add_task(webserver.endpoints_requests.calculate_state_mean_by_category, data, question, state, job_id, webserver.data_ingestor.dict, webserver.jobs_status)
+    webserver.jobs_status[job_id] = 'running'
 
     return jsonify({"job_id": job_id}), 200
 
@@ -512,7 +515,7 @@ def calculate_state_mean_by_category(data, question, state, job_id, data_ingesto
         data_res[state] = formatted_results
         json.dump(data_res, f)
     
-    jobs_status[job_id] = 'done'
+    webserver.jobs_status[job_id] = 'done'
 
 # You can check localhost in your browser to see what this displays
 @webserver.route('/')

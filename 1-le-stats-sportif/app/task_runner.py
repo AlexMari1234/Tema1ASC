@@ -15,7 +15,9 @@ class ThreadPool:
         #   * recreate threads for each task
 
         cpu_count = os.cpu_count()
+        print(f'cpu_count: {cpu_count}')
         self.num_threads = int(os.getenv('TP_NUM_OF_THREADS', cpu_count))
+        # self.num_threads = 1
         self.tasks_queue = Queue()
         self.shutdown_event = Event()
         self.workers = []
@@ -26,7 +28,6 @@ class ThreadPool:
             self.workers.append(worker)
 
     def add_task(self, func, *args, **kwargs):
-        # Adaugă un task în coada de task-uri
         self.tasks_queue.put((func, args, kwargs))
 
     def shutdown(self):
@@ -38,20 +39,16 @@ class ThreadPool:
         for worker in self.workers:
             worker.join()
 
-
-        
-        pass
-
 class TaskRunner(Thread):
     def __init__(self, task_queue, shutdown_event):
         Thread.__init__(self)
         self.task_queue = task_queue
         self.shutdown_event = shutdown_event
-        self.daemon = True  # Asigură că thread-ul nu va preveni închiderea programului
 
     def run(self):
         while not self.shutdown_event.is_set() or not self.task_queue.empty():
             try:
+                #print(self.getName())
                 # Ia următorul task din coadă
                 func, args, kwargs = self.task_queue.get(timeout=0.05)
                 # Rulează task-ul
