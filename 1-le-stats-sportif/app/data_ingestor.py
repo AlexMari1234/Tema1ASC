@@ -1,10 +1,7 @@
-import os
-import json
 import csv
 
 class DataIngestor:
     def __init__(self, csv_path: str):
-        # TODO: Read csv from csv_path
         rows = []
         with open(csv_path, 'r') as file:
             reader = csv.reader(file)
