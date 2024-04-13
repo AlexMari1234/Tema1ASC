@@ -4,8 +4,11 @@ from app.task_runner import ThreadPool
 import os
 from threading import Lock
 from app.endpoints_methods import SolveEndpoint
+from app.logger import AppLogger
 
 os.system("rm -rf results/*")
+os.system("rm webserver.log")
+logger = AppLogger.get_logger("webserver.log")
 webserver = Flask(__name__)
 webserver.tasks_runner = ThreadPool()
 

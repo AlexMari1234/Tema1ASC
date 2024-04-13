@@ -1,6 +1,9 @@
 from flask import request
 import json
 import os
+from app.logger import AppLogger
+
+logger = AppLogger.get_logger("webserver.log")
 
 class SolveEndpoint:
 
@@ -8,6 +11,7 @@ class SolveEndpoint:
         pass
 
     def calculate_states_mean(self, data, question, job_id, webserver_data_ingestor_dict, webserver_jobs_status):
+        logger.info(f'Calculating states mean for job {job_id}')
         state_media = {}
 
         for i in range(len(webserver_data_ingestor_dict["Question"])):
@@ -30,9 +34,11 @@ class SolveEndpoint:
             json.dump(results, f)
         
         webserver_jobs_status[job_id] = 'done'
+        logger.info(f'Finished calculating states mean for job {job_id}')
     
 
     def calculate_state_mean(self, data, question, state, job_id, data_ingestor_dict, webserver_jobs_status):
+        logger.info(f'Calculating state mean for job {job_id}')
         sum_Data_Value = 0.0
         count = 0
 
@@ -55,9 +61,11 @@ class SolveEndpoint:
         
         # Actualizează starea job-ului
         webserver_jobs_status[job_id] = 'done'
+        logger.info(f'Finished calculating state mean for job {job_id}')
     
 
     def calculate_best5(self, data, question, job_id, webserver_data_ingestor_dict, webserver_jobs_status, webserver_questions_best_is_min):
+        logger.info(f'Calculating best 5 for job {job_id}')
         state_media = {}
 
         for i in range(len(webserver_data_ingestor_dict["Question"])):
@@ -84,9 +92,12 @@ class SolveEndpoint:
             json.dump(results, f)
         
         webserver_jobs_status[job_id] = 'done'
+        logger.info(f'Finished calculating best 5 for job {job_id}')
     
 
     def calculate_worst5(self, data, question, job_id, data_ingestor_dict, webserver_jobs_status, webserver_questions_best_is_min):
+        logger.info(f'Calculating worst 5 for job {job_id}')
+
         state_media = {}
         for i in range(len(data_ingestor_dict["Question"])):
             if data_ingestor_dict["Question"][i] == question:
@@ -112,9 +123,11 @@ class SolveEndpoint:
             json.dump(results, f)
         
         webserver_jobs_status[job_id] = 'done'
+        logger.info(f'Finished calculating worst 5 for job {job_id}')
     
 
     def calculate_global_mean(self, data, question, job_id, data_ingestor_dict, webserver_jobs_status):
+        logger.info(f'Calculating global mean for job {job_id}')
         global_mean = 0.0
         count = 0
 
@@ -135,9 +148,12 @@ class SolveEndpoint:
             json.dump(result, f)
         
         webserver_jobs_status[job_id] = 'done'
+        logger.info(f'Finished calculating global mean for job {job_id}')
     
 
     def calculate_diff_from_mean(self, data, question, job_id, data_ingestor_dict, webserver_jobs_status):
+        logger.info(f'Calculating diff from mean for job {job_id}')
+
         global_mean = 0.0
         count = 0
 
@@ -170,9 +186,12 @@ class SolveEndpoint:
             json.dump(results, f)
         
         webserver_jobs_status[job_id] = 'done'
+        logger.info(f'Finished calculating diff from mean for job {job_id}')
     
 
     def calculate_state_diff_from_mean(self, data, question, state, job_id, data_ingestor_dict, webserver_jobs_status):
+        logger.info(f'Calculating state diff from mean for job {job_id}')
+
         global_mean = 0.0
         count_global = 0
 
@@ -200,10 +219,12 @@ class SolveEndpoint:
             json.dump(result, f)
         
         webserver_jobs_status[job_id] = 'done'
+        logger.info(f'Finished calculating state diff from mean for job {job_id}')
     
 
     
     def calculate_mean_by_category(self, data, question, job_id, data_ingestor_dict, webserver_jobs_status):
+        logger.info(f'Calculating mean by category for job {job_id}')
         aggregated_data = {}
 
         for i in range(len(data_ingestor_dict["Question"])):
@@ -238,9 +259,11 @@ class SolveEndpoint:
             json.dump(formatted_results, f)
         
         webserver_jobs_status[job_id] = 'done'
+        logger.info(f'Finished calculating mean by category for job {job_id}')
     
 
     def calculate_state_mean_by_category(self, data, question, state, job_id, data_ingestor_dict, webserver_jobs_status):
+        logger.info(f'Calculating state mean by category for job {job_id}')
         aggregated_data = {}
 
         for i in range(len(data_ingestor_dict["Question"])):
@@ -273,5 +296,5 @@ class SolveEndpoint:
             json.dump(data_res, f)
         
         webserver_jobs_status[job_id] = 'done'
+        logger.info(f'Finished calculating state mean by category for job {job_id}')
     
-
