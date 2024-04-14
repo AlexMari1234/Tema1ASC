@@ -6,8 +6,7 @@ import os
 class ThreadPool:
     def __init__(self):
         cpu_count = os.cpu_count()
-        # self.num_threads = int(os.getenv('TP_NUM_OF_THREADS', cpu_count))
-        self.num_threads = 1
+        self.num_threads = int(os.getenv('TP_NUM_OF_THREADS', cpu_count))
         self.tasks_queue = Queue()
         self.shutdown_event = Event()
         self.workers = []
@@ -22,7 +21,6 @@ class ThreadPool:
 
     def shutdown(self):
         self.shutdown_event.set()
-        self.tasks_queue.join()
         for worker in self.workers:
             worker.join()
 

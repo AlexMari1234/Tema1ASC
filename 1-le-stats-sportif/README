@@ -1,0 +1,56 @@
+Tema1 ASC - Marinescu Alexandru Gabriel 332CA
+
+In aceasta tema am avut de facut un backend pentru o aplicatie in python folosind flask.
+Scopul temei era de prelucrat un fisier csv, iar cu datele din acel fisier trebuia sa implementam
+rutele in backend folosind threadpool, toate rutele cu post trebuiau trimise catre theaduri, iar
+unul din ele executa jobul respectiv si scia in fisierul de output corespunzator.
+
+ThreadPoolul din fisierul task_runner.py este implementat de mana, nu l-am folosit pe cel din
+python, deoarece mi se parea ca face mai mult sens pentru mine sa il fac manual, adica sa vad
+cate threaduri am pe sistemul hardware = 8(pe vm), dupa sa fac o coada de taskuri in care pun
+taskurile pe care trebuie sa le execute theadurile, si dupa aceea asemanator ca la APD
+cream threadurile care extindeau clasa Thread, astfel logica programului unui thread trebuia
+implementata in metoda run. Fiecare worker din ThreadPool avea un task pe care il executa, iar
+cand termina taskul, verifica daca mai sunt taskuri in coada, daca sunt, ia un task si il executa.
+Taskul era format din functia pe care trebuia sa o execute si parametrii acesteia. Acestea
+erau puse in coada de taskuri la fiecare apel post pe baza parametrilor primiti, iar workerii le luau si le executau.
+
+Acum o sa explic logica in sine a progrramului. Am prelucrat fisierul csv folosind csv.reader, astfel
+am luat intai headerul, iar dupa aceea am luat fiecare linie din fisierul csv si am creat un dictionar
+cu cheile din header si valorile erau un array cu valorile de pe linie. Logica unei rute era
+destul de simpla, daca era de tip post, luam data din request, si luam intrebarea, eventual si statul
+pentru anumite rute si le pasam ca parametrii la functia care trebuia sa fie executata de un worker.
+De obicei, majoritatea functiilor primeau ca parametrii un dictionar cu datele din fisierul csv, intrebarea, eventual
+si statul, job_id-ul care se incrementa de fiecare data in webserver.job_counter si un dictionar in care
+se retinea despre fiecare job statusul lui. Astfel, cand un job era in curs de executie, statusul era
+setat pe running, iar cand se termina, statusul era setat pe done. Dupa ce se termina un job, se scria
+in fisierul results/job_id.json rezultatul jobului. De fiecare data returnam status 200 in ruta, puneam
+output de afisare folosind logger.info si logger.error in functie de ce se intampla.La fel si la intrarea
+in functii, puneam ca am intrat in functie pentru un job_id si la iesirea din functie puneam ca am iesit
+pentru acel job_id. Workerii luau de fiecare data din coada un task, care avea adresa functiei de executat si
+parametri si apelau metoda respectiva din fisierul endpoints_methods. Pentru rutele de tip get, scriam
+direct in ruta(cea mai importanta fiind /get_results/job_id unde vedeam daca exista job_id-ul si daca
+exista, vedeam statusul lui si daca statusul era done, afisam rezultatul jobului. Altfel daca nu exista sau
+era in running afisam un mesaj corespunzator, iar pentru cazul daca nu exista returnam status cod 404.
+
+Conceptul de serwe web mi s-a parut interesant, e prima materie la care ni se da ceva de genul sa facem, 
+sa implementam rutele pentru backend. Mi s-a parut interesant si faptul ca am facut un threadpool, asa s-ar
+intampla la orice serve web intr-o aplicatie mare ca sa poata sa duca mai multe requesturi simultan.
+Ce nu mi-a placut e ca se putea da ceva mai interesant, gen a fost destul de boring sa prelucrezi un fisier csv
+si sa te joci cu datele, sa calculezi medii, chiar ceva de anul 1 as putea spune ca nivel de dificultate.
+Stiu ca este greu sa vii cu idei de aplicatii misto, dar consider ca se putea sigur ceva mai interesant
+daca isi puneau capul mai multi oameni. Existau sigur pe internet idei de backend cu threadpool. Macar am invatat
+cum sa lucrez cu threadurile intr-un server web, chiar daca taskurile erau foarte simple si repetitive. In schimb,
+ce apreciez este partea de unittesting, am facut cate un test pentru fiecare functie implementata. Am preculucrat un 
+fisier csv care contine primele 12k linii din fisierul de nutrition dat. Partea de logging, iar mi s-a parut interesanta,
+o metoda de debug foarrte buna, mult mai buna decat printurile. Am invatat cum sa folosesc functiile din documentatie
+si sa afisez intr-un format mai misto decat poate afisa printul. Astfel poti vedea cu usurinta in fisiere .log.id outputul.
+
+In concluzie, tema mi s-a parut interesanta, dar nu foarte dificila, am invatat cum sa lucrez cu threadurile intr-un server web,
+sa imi mai exersez skillurile de python caci sunt incepator cu acest limbaj. Am facut toata logica functiilor "de mana", nu am vrut
+sa folosesc pandas, precum au folosit alti colegi, caci am vrut sa imi exersez skillurile de python. A fost mai enervant partea
+de debug cu entry-urile goale pentru test_mean_by_category, dar am rezolvat pana la urma. Mi s-a parut si ca programul este mai eficient
+din ce am inteles facand totul de mana in comparatie cu pandas, adica la majoritatea care au facut cu pandas am inteles ca avea timp
+de executie mai mare decat al meu. Poate la anul daca se pastreaza ideea de server web cu threaduri, sa se dea ceva
+mai interesant, o mini-aplicatie real-life.
+
