@@ -1,7 +1,7 @@
 import json
 import os
-from flask import request
 from app.logger import AppLogger
+from threading import Lock
 
 logger = AppLogger.get_logger("webserver.log")
 
@@ -12,6 +12,8 @@ class SolveEndpoint:
 
     def calculate_states_mean(self, question, job_id,
                               webserver_data_ingestor_dict, webserver_jobs_status):
+        
+        webserver_jobs_status[job_id] = 'running'
         logger.info(f'Calculating states mean for job {job_id}')
         state_media = {}
         for i in range(len(webserver_data_ingestor_dict["Question"])):
@@ -28,7 +30,6 @@ class SolveEndpoint:
             results[state] = state_media[state][0] / state_media[state][1]
 
         results_dir = 'results'
-        os.makedirs(results_dir, exist_ok=True)
         file_path = os.path.join(results_dir, f'{job_id}.json')
         with open(file_path, 'w') as f:
             json.dump(results, f)
@@ -38,6 +39,7 @@ class SolveEndpoint:
 
     def calculate_state_mean(self, question, state, job_id,
                              data_ingestor_dict, webserver_jobs_status):
+        webserver_jobs_status[job_id] = 'running'
         logger.info(f'Calculating state mean for job {job_id}')
         sum_Data_Value = 0.0
         count = 0
@@ -53,7 +55,7 @@ class SolveEndpoint:
         # Salvează rezultatul într-un fișier JSON
         result = {state: mean_value}
         results_dir = 'results'
-        os.makedirs(results_dir, exist_ok=True)
+        # os.makedirs(results_dir, exist_ok=True)
         file_path = os.path.join(results_dir, f'{job_id}.json')
         with open(file_path, 'w') as f:
             json.dump(result, f)
@@ -63,6 +65,7 @@ class SolveEndpoint:
 
     def calculate_best5(self, question, job_id, webserver_data_ingestor_dict,
                         webserver_jobs_status, webserver_questions_best_is_min):
+        webserver_jobs_status[job_id] = 'running'
         logger.info(f'Calculating best 5 for job {job_id}')
         state_media = {}
 
@@ -85,7 +88,7 @@ class SolveEndpoint:
             results[sorted_states[i][0]] = sorted_states[i][1][0] / sorted_states[i][1][1]
 
         results_dir = 'results'
-        os.makedirs(results_dir, exist_ok=True)
+        # os.makedirs(results_dir, exist_ok=True)
         file_path = os.path.join(results_dir, f'{job_id}.json')
         with open(file_path, 'w') as f:
             json.dump(results, f)
@@ -94,6 +97,7 @@ class SolveEndpoint:
 
     def calculate_worst5(self, question, job_id, data_ingestor_dict, webserver_jobs_status,
                          webserver_questions_best_is_min):
+        webserver_jobs_status[job_id] = 'running'
         logger.info(f'Calculating worst 5 for job {job_id}')
         state_media = {}
 
@@ -116,7 +120,7 @@ class SolveEndpoint:
             results[sorted_states[i][0]] = sorted_states[i][1][0] / sorted_states[i][1][1]
 
         results_dir = 'results'
-        os.makedirs(results_dir, exist_ok=True)
+        # os.makedirs(results_dir, exist_ok=True)
         file_path = os.path.join(results_dir, f'{job_id}.json')
         with open(file_path, 'w') as f:
             json.dump(results, f)
@@ -125,6 +129,7 @@ class SolveEndpoint:
 
     def calculate_global_mean(self, question, job_id, data_ingestor_dict,
                               webserver_jobs_status):
+        webserver_jobs_status[job_id] = 'running'
         logger.info(f'Calculating global mean for job {job_id}')
         global_mean = 0.0
         count = 0
@@ -138,7 +143,7 @@ class SolveEndpoint:
         global_mean = global_mean / count if count else 0
         result = {"global_mean": global_mean}
         results_dir = 'results'
-        os.makedirs(results_dir, exist_ok=True)
+        # os.makedirs(results_dir, exist_ok=True)
         file_path = os.path.join(results_dir, f'{job_id}.json')
         with open(file_path, 'w') as f:
             json.dump(result, f)
@@ -147,6 +152,7 @@ class SolveEndpoint:
 
     def calculate_diff_from_mean(self, question, job_id, data_ingestor_dict,
                                  webserver_jobs_status):
+        webserver_jobs_status[job_id] = 'running'
         logger.info(f'Calculating diff from mean for job {job_id}')
         global_mean = 0.0
         count = 0
@@ -173,7 +179,7 @@ class SolveEndpoint:
             results[state] = global_mean - state_media[state][0] / state_media[state][1]
 
         results_dir = 'results'
-        os.makedirs(results_dir, exist_ok=True)
+        # os.makedirs(results_dir, exist_ok=True)
         file_path = os.path.join(results_dir, f'{job_id}.json')
         with open(file_path, 'w') as f:
             json.dump(results, f)
@@ -182,6 +188,7 @@ class SolveEndpoint:
 
     def calculate_state_diff_from_mean(self, question, state, job_id,
                                        data_ingestor_dict, webserver_jobs_status):
+        webserver_jobs_status[job_id] = 'running'
         logger.info(f'Calculating state diff from mean for job {job_id}')
         global_mean = 0.0
         count_global = 0
@@ -201,7 +208,7 @@ class SolveEndpoint:
         state_mean = state_mean / count_state if count_state else 0
         result = {state: global_mean - state_mean}
         results_dir = 'results'
-        os.makedirs(results_dir, exist_ok=True)
+        # os.makedirs(results_dir, exist_ok=True)
         file_path = os.path.join(results_dir, f'{job_id}.json')
         with open(file_path, 'w') as f:
             json.dump(result, f)
@@ -210,6 +217,7 @@ class SolveEndpoint:
 
     def calculate_mean_by_category(self, question, job_id,
                                    data_ingestor_dict, webserver_jobs_status):
+        webserver_jobs_status[job_id] = 'running'
         logger.info(f'Calculating mean by category for job {job_id}')
         aggregated_data = {}
 
@@ -217,13 +225,15 @@ class SolveEndpoint:
             if data_ingestor_dict["Question"][i] == question:
                 state = data_ingestor_dict["LocationDesc"][i]
                 category = data_ingestor_dict["StratificationCategory1"][i]
-                segment = data_ingestor_dict["Stratification1"][i]
-                value = float(data_ingestor_dict["Data_Value"][i]) if data_ingestor_dict["Data_Value"][i] else 0
-                key = (state, category, segment)
-                if key not in aggregated_data:
-                    aggregated_data[key] = [0, 0]
-                aggregated_data[key][0] += value
-                aggregated_data[key][1] += 1
+                if category:
+                    segment = data_ingestor_dict["Stratification1"][i]
+                    value = float(data_ingestor_dict["Data_Value"][i]) if data_ingestor_dict["Data_Value"][i] else 0
+                    key = (state, category, segment)
+                    if key not in aggregated_data:
+                        aggregated_data[key] = [0, 0]
+                    if value:
+                        aggregated_data[key][0] += value
+                        aggregated_data[key][1] += 1
         
         results = {}
         for key, (total, count) in aggregated_data.items():
@@ -231,7 +241,7 @@ class SolveEndpoint:
             results[key] = mean_value
 
         results_dir = 'results'
-        os.makedirs(results_dir, exist_ok=True)
+        # os.makedirs(results_dir, exist_ok=True)
         file_path = os.path.join(results_dir, f'{job_id}.json')
         with open(file_path, 'w') as f:
             formatted_results = {str(key): value for key, value in results.items()}
@@ -242,6 +252,7 @@ class SolveEndpoint:
 
     def calculate_state_mean_by_category(self, question, state, job_id,
                                          data_ingestor_dict, webserver_jobs_status):
+        webserver_jobs_status[job_id] = 'running'
         logger.info(f'Calculating state mean by category for job {job_id}')
         aggregated_data = {}
 
@@ -262,7 +273,7 @@ class SolveEndpoint:
             results[key] = mean_value
 
         results_dir = 'results'
-        os.makedirs(results_dir, exist_ok=True)
+        # os.makedirs(results_dir, exist_ok=True)
         file_path = os.path.join(results_dir, f'{job_id}.json')
         with open(file_path, 'w') as f:
             formatted_results = {str(key): value for key, value in results.items()}
